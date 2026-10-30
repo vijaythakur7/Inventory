@@ -1,7 +1,10 @@
 from flask import Blueprint, request, jsonify
 
 from services.categories_service import CategoryService
-
+from services.categories_service import (
+    CategoryService,
+    UserServiceUnavailable
+)
 
 category_controller = Blueprint(
     "category_controller",
@@ -117,11 +120,6 @@ def delete_category(category_id):
 
 
 
-from flask import request, jsonify
-from clients.user_client import (
-    get_current_user,
-    UserServiceUnavailable
-)
 
 
 @category_controller.route("/user", methods=["GET"])
@@ -129,15 +127,15 @@ def test_user_service():
 
     auth_header = request.headers.get("Authorization")
 
-    if not auth_header:
+    if not auth_header or not auth_header.startswith("Bearer "):
         return jsonify({
-            "message": "Authorization header is required"
+            "message": "Valid Bearer token is required"
         }), 401
 
-    token = auth_header.split(" ", 1)[1]
+    token = auth_header.split(" ", 1)[1].strip()
 
     try:
-        response = get_current_user(token)
+        response = CategoryService.get_user_from_user_service(token)
 
     except UserServiceUnavailable as exc:
         return jsonify({
