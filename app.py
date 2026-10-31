@@ -2,6 +2,7 @@ from flask import Flask
 
 from config.db_config import Config
 from extensions import db
+from extensions import db, migrate
 from models.categories_model import Category
 from models.products_model import Product
 from models.stock_movements_model import StockMovement
@@ -19,6 +20,7 @@ app.config.from_object(Config)
 
 # Initialize SQLAlchemy
 db.init_app(app)
+migrate.init_app(app, db)
 
 
 # Register Blueprint
