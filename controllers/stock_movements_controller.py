@@ -1,13 +1,8 @@
-from flask import Blueprint, request, jsonify
 
-from services.stock_movements_service import (
-    StockMovementService
-)
+from flask import Blueprint, request, jsonify, g
 
-from services.categories_service import (
-    CategoryService,
-    UserServiceUnavailable
-)
+from services.stock_movements_service import StockMovementService
+from middleware.authentication import require_authentication
 
 
 stock_controller = Blueprint(
@@ -17,82 +12,18 @@ stock_controller = Blueprint(
 )
 
 
-def get_authenticated_user():
-
-    auth_header = request.headers.get("Authorization")
-
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return None, (
-            jsonify({
-                "message": "Valid Bearer token is required"
-            }),
-            401
-        )
-
-    token = auth_header.split(" ", 1)[1].strip()
-
-    if not token:
-        return None, (
-            jsonify({
-                "message": "Valid Bearer token is required"
-            }),
-            401
-        )
-
-    try:
-        response = CategoryService.get_user_from_user_service(token)
-
-    except UserServiceUnavailable as exc:
-        return None, (
-            jsonify({
-                "message": str(exc)
-            }),
-            503
-        )
-
-    if not response.ok:
-        return None, (
-            jsonify({
-                "message": "Authentication failed",
-                "status_code": response.status_code
-            }),
-            response.status_code
-        )
-
-    try:
-        user_data = response.json()
-
-    except ValueError:
-        return None, (
-            jsonify({
-                "message": "User Service returned invalid JSON"
-            }),
-            502
-        )
-
-    user_id = user_data.get("id")
-
-    if user_id is None:
-        return None, (
-            jsonify({
-                "message": "User ID missing from User Service response"
-            }),
-            502
-        )
-
-    return user_id, None
-
+# ============================================================
+# STOCK IN
+# ============================================================
 
 @stock_controller.route(
     "/<int:product_id>/stock-in",
     methods=["POST"]
 )
+@require_authentication
 def stock_in(product_id):
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     data = request.get_json()
 
@@ -114,21 +45,25 @@ def stock_in(product_id):
         }), 201
 
     except ValueError as error:
+        status_code = 404 if str(error) == "Product not found" else 400
+
         return jsonify({
             "error": str(error)
-        }), 400
+        }), status_code
 
+
+# ============================================================
+# STOCK OUT
+# ============================================================
 
 @stock_controller.route(
     "/<int:product_id>/stock-out",
     methods=["POST"]
 )
+@require_authentication
 def stock_out(product_id):
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     data = request.get_json()
 
@@ -150,21 +85,25 @@ def stock_out(product_id):
         }), 201
 
     except ValueError as error:
+        status_code = 404 if str(error) == "Product not found" else 400
+
         return jsonify({
             "error": str(error)
-        }), 400
+        }), status_code
 
+
+# ============================================================
+# STOCK HISTORY
+# ============================================================
 
 @stock_controller.route(
     "/<int:product_id>/stock-history",
     methods=["GET"]
 )
+@require_authentication
 def stock_history(product_id):
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     try:
         movements = StockMovementService.get_stock_history(

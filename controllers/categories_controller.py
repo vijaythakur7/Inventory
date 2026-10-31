@@ -1,9 +1,9 @@
-from flask import Blueprint, request, jsonify
 
-from services.categories_service import (
-    CategoryService,
-    UserServiceUnavailable
-)
+from flask import Blueprint, request, jsonify, g
+
+from services.categories_service import CategoryService
+from middleware.authentication import require_authentication
+
 
 category_controller = Blueprint(
     "category_controller",
@@ -12,79 +12,15 @@ category_controller = Blueprint(
 )
 
 
-def get_authenticated_user():
-
-    auth_header = request.headers.get("Authorization")
-
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return None, (
-            jsonify({
-                "message": "Valid Bearer token is required"
-            }),
-            401
-        )
-
-    token = auth_header.split(" ", 1)[1].strip()
-
-    if not token:
-        return None, (
-            jsonify({
-                "message": "Valid Bearer token is required"
-            }),
-            401
-        )
-
-    try:
-        response = CategoryService.get_user_from_user_service(token)
-
-    except UserServiceUnavailable as exc:
-        return None, (
-            jsonify({
-                "message": str(exc)
-            }),
-            503
-        )
-
-    if not response.ok:
-        return None, (
-            jsonify({
-                "message": "Authentication failed",
-                "status_code": response.status_code
-            }),
-            response.status_code
-        )
-
-    try:
-        user_data = response.json()
-
-    except ValueError:
-        return None, (
-            jsonify({
-                "message": "User service returned invalid JSON"
-            }),
-            502
-        )
-
-    user_id = user_data.get("id")
-
-    if user_id is None:
-        return None, (
-            jsonify({
-                "message": "User ID missing from User Service response"
-            }),
-            502
-        )
-
-    return user_id, None
-
+# ============================================================
+# CREATE CATEGORY
+# ============================================================
 
 @category_controller.route("", methods=["POST"])
+@require_authentication
 def create_category():
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     data = request.get_json()
 
@@ -110,13 +46,15 @@ def create_category():
         }), 400
 
 
+# ============================================================
+# GET ALL CATEGORIES
+# ============================================================
+
 @category_controller.route("", methods=["GET"])
+@require_authentication
 def get_categories():
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     categories = CategoryService.get_all_categories(user_id)
 
@@ -130,13 +68,15 @@ def get_categories():
     ]), 200
 
 
+# ============================================================
+# GET CATEGORY BY ID
+# ============================================================
+
 @category_controller.route("/<int:category_id>", methods=["GET"])
+@require_authentication
 def get_category(category_id):
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     try:
         category = CategoryService.get_category(
@@ -156,16 +96,18 @@ def get_category(category_id):
         }), 404
 
 
+# ============================================================
+# UPDATE CATEGORY
+# ============================================================
+
 @category_controller.route(
     "/<int:category_id>",
     methods=["PUT"]
 )
+@require_authentication
 def update_category(category_id):
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     data = request.get_json()
 
@@ -187,21 +129,25 @@ def update_category(category_id):
         }), 200
 
     except ValueError as error:
+        status_code = 404 if str(error) == "Category not found" else 400
+
         return jsonify({
             "error": str(error)
-        }), 404
+        }), status_code
 
+
+# ============================================================
+# DELETE CATEGORY
+# ============================================================
 
 @category_controller.route(
     "/<int:category_id>",
     methods=["DELETE"]
 )
+@require_authentication
 def delete_category(category_id):
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     try:
         CategoryService.delete_category(
@@ -219,13 +165,15 @@ def delete_category(category_id):
         }), 404
 
 
+# ============================================================
+# TEST USER SERVICE COMMUNICATION
+# ============================================================
+
 @category_controller.route("/user", methods=["GET"])
+@require_authentication
 def test_user_service():
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     return jsonify({
         "message": "User Service communication successful",

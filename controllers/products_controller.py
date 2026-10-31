@@ -1,11 +1,7 @@
-
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 
 from services.products_service import ProductService
-from services.categories_service import (
-    CategoryService,
-    UserServiceUnavailable
-)
+from middleware.authentication import require_authentication
 
 
 product_controller = Blueprint(
@@ -13,65 +9,6 @@ product_controller = Blueprint(
     __name__,
     url_prefix="/api/products"
 )
-
-
-# ============================================================
-# AUTHENTICATED USER
-# ============================================================
-
-def get_authenticated_user():
-
-    auth_header = request.headers.get("Authorization")
-
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return None, (
-            jsonify({"message": "Valid Bearer token is required"}),
-            401
-        )
-
-    token = auth_header.split(" ", 1)[1].strip()
-
-    if not token:
-        return None, (
-            jsonify({"message": "Valid Bearer token is required"}),
-            401
-        )
-
-    try:
-        response = CategoryService.get_user_from_user_service(token)
-
-    except UserServiceUnavailable as exc:
-        return None, (
-            jsonify({"message": str(exc)}),
-            503
-        )
-
-    if not response.ok:
-        return None, (
-            jsonify({
-                "message": "Authentication failed",
-                "status_code": response.status_code
-            }),
-            response.status_code
-        )
-
-    try:
-        user_data = response.json()
-    except ValueError:
-        return None, (
-            jsonify({"message": "User Service returned invalid JSON"}),
-            502
-        )
-
-    user_id = user_data.get("id")
-
-    if user_id is None:
-        return None, (
-            jsonify({"message": "User ID missing from User Service response"}),
-            502
-        )
-
-    return user_id, None
 
 
 # ============================================================
@@ -96,12 +33,10 @@ def serialize_product(product):
 # ============================================================
 
 @product_controller.route("", methods=["POST"])
+@require_authentication
 def create_product():
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     data = request.get_json()
 
@@ -125,12 +60,10 @@ def create_product():
 # ============================================================
 
 @product_controller.route("", methods=["GET"])
+@require_authentication
 def get_products():
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     products = ProductService.get_all_products(user_id)
 
@@ -145,12 +78,11 @@ def get_products():
 # ============================================================
 
 @product_controller.route("/<int:product_id>", methods=["GET"])
+@require_authentication
 def get_product(product_id):
 
-    user_id, error_response = get_authenticated_user()
+    user_id = g.user_id
 
-    if error_response:
-        return error_response
 
     try:
         product = ProductService.get_product(product_id, user_id)
@@ -166,12 +98,10 @@ def get_product(product_id):
 # ============================================================
 
 @product_controller.route("/<int:product_id>", methods=["PUT"])
+@require_authentication
 def update_product(product_id):
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     data = request.get_json()
 
@@ -200,12 +130,10 @@ def update_product(product_id):
 # ============================================================
 
 @product_controller.route("/<int:product_id>", methods=["DELETE"])
+@require_authentication
 def delete_product(product_id):
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     try:
         ProductService.delete_product(product_id, user_id)
@@ -223,12 +151,10 @@ def delete_product(product_id):
 # ============================================================
 
 @product_controller.route("/low-stock", methods=["GET"])
+@require_authentication
 def get_low_stock_products():
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     products = ProductService.get_low_stock_products(user_id)
 
@@ -243,12 +169,10 @@ def get_low_stock_products():
 # ============================================================
 
 @product_controller.route("/search", methods=["GET"])
+@require_authentication
 def search_products():
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     search = request.args.get("search")
 
@@ -265,12 +189,10 @@ def search_products():
 # ============================================================
 
 @product_controller.route("/filter/category", methods=["GET"])
+@require_authentication
 def filter_products_by_category():
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     category_id = request.args.get("category_id", type=int)
 
@@ -297,12 +219,10 @@ def filter_products_by_category():
 # ============================================================
 
 @product_controller.route("/filter/price", methods=["GET"])
+@require_authentication
 def filter_products_by_price():
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     min_price = request.args.get("min_price", type=float)
     max_price = request.args.get("max_price", type=float)
@@ -328,12 +248,10 @@ def filter_products_by_price():
 # ============================================================
 
 @product_controller.route("/filter/stock", methods=["GET"])
+@require_authentication
 def filter_products_by_stock():
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
+    user_id = g.user_id
 
     stock_status = request.args.get("stock_status")
 
@@ -360,13 +278,11 @@ def filter_products_by_stock():
 # ============================================================
 
 @product_controller.route("/browse", methods=["GET"])
+@require_authentication
 def browse_products():
 
-    user_id, error_response = get_authenticated_user()
-
-    if error_response:
-        return error_response
-
+    user_id = g.user_id
+    
     search = request.args.get("search")
 
     category_id = request.args.get(
