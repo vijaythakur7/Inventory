@@ -6,11 +6,12 @@ from repositories.categories_repositorie import CategoryRepository
 class ProductService:
 
     @staticmethod
-    def create_product(data):
+    def create_product(data, user_id):
 
-        # Check category
+        # Check whether category belongs to this user
         category = CategoryRepository.get_by_id(
-            data["category_id"]
+            data["category_id"],
+            user_id
         )
 
         if not category:
@@ -22,20 +23,24 @@ class ProductService:
             price=data["price"],
             quantity=data.get("quantity", 0),
             minimum_stock=data.get("minimum_stock", 5),
-            category_id=data["category_id"]
+            category_id=data["category_id"],
+            user_id=user_id
         )
 
         return ProductRepository.create(product)
 
     @staticmethod
-    def get_all_products():
+    def get_all_products(user_id):
 
-        return ProductRepository.get_all()
+        return ProductRepository.get_all(user_id)
 
     @staticmethod
-    def get_product(product_id):
+    def get_product(product_id, user_id):
 
-        product = ProductRepository.get_by_id(product_id)
+        product = ProductRepository.get_by_id(
+            product_id,
+            user_id
+        )
 
         if not product:
             raise ValueError("Product not found")
@@ -43,9 +48,12 @@ class ProductService:
         return product
 
     @staticmethod
-    def update_product(product_id, data):
+    def update_product(product_id, data, user_id):
 
-        product = ProductRepository.get_by_id(product_id)
+        product = ProductRepository.get_by_id(
+            product_id,
+            user_id
+        )
 
         if not product:
             raise ValueError("Product not found")
@@ -73,7 +81,8 @@ class ProductService:
         if "category_id" in data:
 
             category = CategoryRepository.get_by_id(
-                data["category_id"]
+                data["category_id"],
+                user_id
             )
 
             if not category:
@@ -86,9 +95,12 @@ class ProductService:
         return product
 
     @staticmethod
-    def delete_product(product_id):
+    def delete_product(product_id, user_id):
 
-        product = ProductRepository.get_by_id(product_id)
+        product = ProductRepository.get_by_id(
+            product_id,
+            user_id
+        )
 
         if not product:
             raise ValueError("Product not found")
@@ -96,13 +108,23 @@ class ProductService:
         ProductRepository.delete(product)
 
     @staticmethod
-    def get_products_by_category(category_id):
+    def get_products_by_category(category_id, user_id):
+
+        # Verify category ownership first
+        category = CategoryRepository.get_by_id(
+            category_id,
+            user_id
+        )
+
+        if not category:
+            raise ValueError("Category not found")
 
         return ProductRepository.get_by_category(
-            category_id
+            category_id,
+            user_id
         )
 
     @staticmethod
-    def get_low_stock_products():
+    def get_low_stock_products(user_id):
 
-        return ProductRepository.get_low_stock()
+        return ProductRepository.get_low_stock(user_id)

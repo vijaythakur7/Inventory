@@ -12,12 +12,17 @@ class ProductRepository:
         return product
 
     @staticmethod
-    def get_all():
-        return Product.query.all()
+    def get_all(user_id):
+        return Product.query.filter_by(
+            user_id=user_id
+        ).all()
 
     @staticmethod
-    def get_by_id(product_id):
-        return Product.query.get(product_id)
+    def get_by_id(product_id, user_id):
+        return Product.query.filter_by(
+            id=product_id,
+            user_id=user_id
+        ).first()
 
     @staticmethod
     def update():
@@ -29,13 +34,15 @@ class ProductRepository:
         db.session.commit()
 
     @staticmethod
-    def get_by_category(category_id):
+    def get_by_category(category_id, user_id):
         return Product.query.filter_by(
-            category_id=category_id
+            category_id=category_id,
+            user_id=user_id
         ).all()
 
     @staticmethod
-    def get_low_stock():
+    def get_low_stock(user_id):
         return Product.query.filter(
+            Product.user_id == user_id,
             Product.quantity <= Product.minimum_stock
         ).all()
