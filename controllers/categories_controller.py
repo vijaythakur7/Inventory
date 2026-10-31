@@ -1,8 +1,9 @@
 
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, g
 
 from services.categories_service import CategoryService
 from middleware.authentication import require_authentication
+from utils.response import success_response, error_response
 
 
 category_controller = Blueprint(
@@ -10,6 +11,19 @@ category_controller = Blueprint(
     __name__,
     url_prefix="/api/categories"
 )
+
+
+# ============================================================
+# CATEGORY RESPONSE FORMAT
+# ============================================================
+
+def serialize_category(category):
+
+    return {
+        "id": category.id,
+        "name": category.name,
+        "description": category.description
+    }
 
 
 # ============================================================
@@ -21,13 +35,10 @@ category_controller = Blueprint(
 def create_category():
 
     user_id = g.user_id
-
     data = request.get_json()
 
     if not isinstance(data, dict) or not data.get("name"):
-        return jsonify({
-            "error": "Category name is required"
-        }), 400
+        return error_response("Category name is required", 400)
 
     try:
         category = CategoryService.create_category(
@@ -35,15 +46,14 @@ def create_category():
             user_id
         )
 
-        return jsonify({
-            "message": "Category created successfully",
-            "id": category.id
-        }), 201
+        return success_response(
+            "Category created successfully",
+            serialize_category(category),
+            201
+        )
 
     except ValueError as error:
-        return jsonify({
-            "error": str(error)
-        }), 400
+        return error_response(str(error), 400)
 
 
 # ============================================================
@@ -58,14 +68,13 @@ def get_categories():
 
     categories = CategoryService.get_all_categories(user_id)
 
-    return jsonify([
-        {
-            "id": category.id,
-            "name": category.name,
-            "description": category.description
-        }
-        for category in categories
-    ]), 200
+    return success_response(
+        "Categories retrieved successfully",
+        [
+            serialize_category(category)
+            for category in categories
+        ]
+    )
 
 
 # ============================================================
@@ -84,16 +93,13 @@ def get_category(category_id):
             user_id
         )
 
-        return jsonify({
-            "id": category.id,
-            "name": category.name,
-            "description": category.description
-        }), 200
+        return success_response(
+            "Category retrieved successfully",
+            serialize_category(category)
+        )
 
     except ValueError as error:
-        return jsonify({
-            "error": str(error)
-        }), 404
+        return error_response(str(error), 404)
 
 
 # ============================================================
@@ -108,13 +114,10 @@ def get_category(category_id):
 def update_category(category_id):
 
     user_id = g.user_id
-
     data = request.get_json()
 
     if not isinstance(data, dict):
-        return jsonify({
-            "error": "Valid JSON body is required"
-        }), 400
+        return error_response("Valid JSON body is required", 400)
 
     try:
         category = CategoryService.update_category(
@@ -123,17 +126,15 @@ def update_category(category_id):
             user_id
         )
 
-        return jsonify({
-            "message": "Category updated successfully",
-            "id": category.id
-        }), 200
+        return success_response(
+            "Category updated successfully",
+            serialize_category(category)
+        )
 
     except ValueError as error:
         status_code = 404 if str(error) == "Category not found" else 400
 
-        return jsonify({
-            "error": str(error)
-        }), status_code
+        return error_response(str(error), status_code)
 
 
 # ============================================================
@@ -155,14 +156,12 @@ def delete_category(category_id):
             user_id
         )
 
-        return jsonify({
-            "message": "Category deleted successfully"
-        }), 200
+        return success_response(
+            "Category deleted successfully"
+        )
 
     except ValueError as error:
-        return jsonify({
-            "error": str(error)
-        }), 404
+        return error_response(str(error), 404)
 
 
 # ============================================================
@@ -175,7 +174,9 @@ def test_user_service():
 
     user_id = g.user_id
 
-    return jsonify({
-        "message": "User Service communication successful",
-        "user_id": user_id
-    }), 200
+    return success_response(
+        "User Service communication successful",
+        {
+            "user_id": user_id
+        }
+    )

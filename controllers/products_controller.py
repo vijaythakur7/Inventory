@@ -1,8 +1,8 @@
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, g
 
 from services.products_service import ProductService
 from middleware.authentication import require_authentication
-
+from utils.response import success_response, error_response
 
 product_controller = Blueprint(
     "product_controller",
@@ -37,22 +37,22 @@ def serialize_product(product):
 def create_product():
 
     user_id = g.user_id
-
     data = request.get_json()
 
     if not isinstance(data, dict):
-        return jsonify({"error": "Valid JSON body is required"}), 400
+        return error_response("Valid JSON body is required", 400)
 
     try:
         product = ProductService.create_product(data, user_id)
 
-        return jsonify({
-            "message": "Product created successfully",
-            "id": product.id
-        }), 201
+        return success_response(
+            "Product created successfully",
+            serialize_product(product),
+            201
+        )
 
     except ValueError as error:
-        return jsonify({"error": str(error)}), 400
+        return error_response(str(error), 400)
 
 
 # ============================================================
@@ -67,10 +67,13 @@ def get_products():
 
     products = ProductService.get_all_products(user_id)
 
-    return jsonify([
-        serialize_product(product)
-        for product in products
-    ]), 200
+    return success_response(
+        "Products retrieved successfully",
+        [
+            serialize_product(product)
+            for product in products
+        ]
+    )
 
 
 # ============================================================
@@ -83,14 +86,16 @@ def get_product(product_id):
 
     user_id = g.user_id
 
-
     try:
         product = ProductService.get_product(product_id, user_id)
 
-        return jsonify(serialize_product(product)), 200
+        return success_response(
+            "Product retrieved successfully",
+            serialize_product(product)
+        )
 
     except ValueError as error:
-        return jsonify({"error": str(error)}), 404
+        return error_response(str(error), 404)
 
 
 # ============================================================
@@ -102,11 +107,10 @@ def get_product(product_id):
 def update_product(product_id):
 
     user_id = g.user_id
-
     data = request.get_json()
 
     if not isinstance(data, dict):
-        return jsonify({"error": "Valid JSON body is required"}), 400
+        return error_response("Valid JSON body is required", 400)
 
     try:
         product = ProductService.update_product(
@@ -115,14 +119,14 @@ def update_product(product_id):
             user_id
         )
 
-        return jsonify({
-            "message": "Product updated successfully",
-            "id": product.id
-        }), 200
+        return success_response(
+            "Product updated successfully",
+            serialize_product(product)
+        )
 
     except ValueError as error:
         status_code = 404 if str(error) == "Product not found" else 400
-        return jsonify({"error": str(error)}), status_code
+        return error_response(str(error), status_code)
 
 
 # ============================================================
@@ -138,12 +142,12 @@ def delete_product(product_id):
     try:
         ProductService.delete_product(product_id, user_id)
 
-        return jsonify({
-            "message": "Product deleted successfully"
-        }), 200
+        return success_response(
+            "Product deleted successfully"
+        )
 
     except ValueError as error:
-        return jsonify({"error": str(error)}), 404
+        return error_response(str(error), 404)
 
 
 # ============================================================
@@ -158,10 +162,13 @@ def get_low_stock_products():
 
     products = ProductService.get_low_stock_products(user_id)
 
-    return jsonify([
-        serialize_product(product)
-        for product in products
-    ]), 200
+    return success_response(
+        "Low stock products retrieved successfully",
+        [
+            serialize_product(product)
+            for product in products
+        ]
+    )
 
 
 # ============================================================
@@ -173,15 +180,17 @@ def get_low_stock_products():
 def search_products():
 
     user_id = g.user_id
-
     search = request.args.get("search")
 
     products = ProductService.search_products(search, user_id)
 
-    return jsonify([
-        serialize_product(product)
-        for product in products
-    ]), 200
+    return success_response(
+        "Products search completed successfully",
+        [
+            serialize_product(product)
+            for product in products
+        ]
+    )
 
 
 # ============================================================
@@ -193,11 +202,10 @@ def search_products():
 def filter_products_by_category():
 
     user_id = g.user_id
-
     category_id = request.args.get("category_id", type=int)
 
     if category_id is None:
-        return jsonify({"error": "Valid category_id is required"}), 400
+        return error_response("Valid category_id is required", 400)
 
     try:
         products = ProductService.filter_by_category(
@@ -205,13 +213,16 @@ def filter_products_by_category():
             user_id
         )
 
-        return jsonify([
-            serialize_product(product)
-            for product in products
-        ]), 200
+        return success_response(
+            "Products filtered successfully",
+            [
+                serialize_product(product)
+                for product in products
+            ]
+        )
 
     except ValueError as error:
-        return jsonify({"error": str(error)}), 404
+        return error_response(str(error), 404)
 
 
 # ============================================================
@@ -234,13 +245,16 @@ def filter_products_by_price():
             max_price
         )
 
-        return jsonify([
-            serialize_product(product)
-            for product in products
-        ]), 200
+        return success_response(
+            "Products filtered successfully",
+            [
+                serialize_product(product)
+                for product in products
+            ]
+        )
 
     except ValueError as error:
-        return jsonify({"error": str(error)}), 400
+        return error_response(str(error), 400)
 
 
 # ============================================================
@@ -252,11 +266,10 @@ def filter_products_by_price():
 def filter_products_by_stock():
 
     user_id = g.user_id
-
     stock_status = request.args.get("stock_status")
 
     if not stock_status:
-        return jsonify({"error": "stock_status is required"}), 400
+        return error_response("stock_status is required", 400)
 
     try:
         products = ProductService.filter_by_stock(
@@ -264,13 +277,16 @@ def filter_products_by_stock():
             user_id
         )
 
-        return jsonify([
-            serialize_product(product)
-            for product in products
-        ]), 200
+        return success_response(
+            "Products filtered successfully",
+            [
+                serialize_product(product)
+                for product in products
+            ]
+        )
 
     except ValueError as error:
-        return jsonify({"error": str(error)}), 400
+        return error_response(str(error), 400)
 
 
 # ============================================================
@@ -282,7 +298,7 @@ def filter_products_by_stock():
 def browse_products():
 
     user_id = g.user_id
-    
+
     search = request.args.get("search")
 
     category_id = request.args.get(
@@ -293,15 +309,12 @@ def browse_products():
     stock_status = request.args.get("stock_status")
 
     min_price = request.args.get("min_price", type=float)
-
     max_price = request.args.get("max_price", type=float)
 
     sort = request.args.get("sort", "created_at")
-
     order = request.args.get("order", "desc")
 
     page = request.args.get("page", 1, type=int)
-
     limit = request.args.get("limit", 10, type=int)
 
     try:
@@ -318,20 +331,23 @@ def browse_products():
             limit=limit
         )
 
-        return jsonify({
-            "data": [
-                serialize_product(product)
-                for product in pagination.items
-            ],
-            "pagination": {
-                "page": pagination.page,
-                "limit": pagination.per_page,
-                "total_items": pagination.total,
-                "total_pages": pagination.pages,
-                "has_next": pagination.has_next,
-                "has_prev": pagination.has_prev
+        return success_response(
+            "Products retrieved successfully",
+            {
+                "products": [
+                    serialize_product(product)
+                    for product in pagination.items
+                ],
+                "pagination": {
+                    "page": pagination.page,
+                    "limit": pagination.per_page,
+                    "total_items": pagination.total,
+                    "total_pages": pagination.pages,
+                    "has_next": pagination.has_next,
+                    "has_prev": pagination.has_prev
+                }
             }
-        }), 200
+        )
 
     except ValueError as error:
-        return jsonify({"error": str(error)}), 400
+        return error_response(str(error), 400)
