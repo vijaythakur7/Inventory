@@ -1,13 +1,5 @@
 from models.categories_model import Category
 from repositories.categories_repositorie import CategoryRepository
-from clients.user_client import (
-    get_current_user,
-    UserServiceUnavailable as UserClientUnavailable
-)
-
-
-class UserServiceUnavailable(Exception):
-    pass
 
 
 class CategoryService:
@@ -74,13 +66,3 @@ class CategoryService:
             raise ValueError("Category not found")
 
         CategoryRepository.delete(category)
-
-    @staticmethod
-    def get_user_from_user_service(token):
-
-        try:
-            response = get_current_user(token)
-            return response
-
-        except UserClientUnavailable as exc:
-            raise UserServiceUnavailable(str(exc)) from exc
