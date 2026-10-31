@@ -6,27 +6,35 @@ from clients.user_client import (
 )
 
 
+class UserServiceUnavailable(Exception):
+    pass
+
+
 class CategoryService:
 
     @staticmethod
-    def create_category(data):
+    def create_category(data, user_id):
 
         category = Category(
             name=data["name"],
-            description=data.get("description")
+            description=data.get("description"),
+            user_id=user_id
         )
 
         return CategoryRepository.create(category)
 
     @staticmethod
-    def get_all_categories():
+    def get_all_categories(user_id):
 
-        return CategoryRepository.get_all()
+        return CategoryRepository.get_all(user_id)
 
     @staticmethod
-    def get_category(category_id):
+    def get_category(category_id, user_id):
 
-        category = CategoryRepository.get_by_id(category_id)
+        category = CategoryRepository.get_by_id(
+            category_id,
+            user_id
+        )
 
         if not category:
             raise ValueError("Category not found")
@@ -34,9 +42,12 @@ class CategoryService:
         return category
 
     @staticmethod
-    def update_category(category_id, data):
+    def update_category(category_id, data, user_id):
 
-        category = CategoryRepository.get_by_id(category_id)
+        category = CategoryRepository.get_by_id(
+            category_id,
+            user_id
+        )
 
         if not category:
             raise ValueError("Category not found")
@@ -52,9 +63,12 @@ class CategoryService:
         return category
 
     @staticmethod
-    def delete_category(category_id):
+    def delete_category(category_id, user_id):
 
-        category = CategoryRepository.get_by_id(category_id)
+        category = CategoryRepository.get_by_id(
+            category_id,
+            user_id
+        )
 
         if not category:
             raise ValueError("Category not found")
@@ -70,6 +84,3 @@ class CategoryService:
 
         except UserClientUnavailable as exc:
             raise UserServiceUnavailable(str(exc)) from exc
-
-class UserServiceUnavailable(Exception):
-    pass
