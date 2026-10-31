@@ -12,13 +12,19 @@ class Category(db.Model):
 
     name = db.Column(
         db.String(100),
-        nullable=False,
-        unique=True
+        nullable=False
     )
 
     description = db.Column(
         db.String(255),
         nullable=True
+    )
+
+    # Category owner (User Service ID)
+    user_id = db.Column(
+        db.Integer,
+        nullable=False,
+        index=True
     )
 
     # One Category → Many Products

@@ -45,6 +45,13 @@ class Product(db.Model):
         nullable=False
     )
 
+    # Product owner (User Service ID)
+    user_id = db.Column(
+        db.Integer,
+        nullable=False,
+        index=True
+    )
+
     created_at = db.Column(
         db.DateTime,
         server_default=db.func.now()

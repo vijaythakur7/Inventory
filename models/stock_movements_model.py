@@ -17,6 +17,13 @@ class StockMovement(db.Model):
         nullable=False
     )
 
+    # User who performed this stock movement
+    user_id = db.Column(
+        db.Integer,
+        nullable=False,
+        index=True
+    )
+
     movement_type = db.Column(
         db.Enum("IN", "OUT"),
         nullable=False
