@@ -9,9 +9,13 @@ from repositories.stock_movements_repositorie import (
 class StockMovementService:
 
     @staticmethod
-    def stock_in(product_id, data):
+    def stock_in(product_id, data, user_id):
 
-        product = ProductRepository.get_by_id(product_id)
+        # Find product belonging to this user
+        product = ProductRepository.get_by_id(
+            product_id,
+            user_id
+        )
 
         if not product:
             raise ValueError("Product not found")
@@ -28,6 +32,7 @@ class StockMovementService:
 
         movement = StockMovement(
             product_id=product.id,
+            user_id=user_id,
             movement_type="IN",
             quantity=quantity,
             reason=data.get("reason")
@@ -35,14 +40,16 @@ class StockMovementService:
 
         ProductRepository.update()
 
-        return StockMovementRepository.create(
-            movement
-        )
+        return StockMovementRepository.create(movement)
 
     @staticmethod
-    def stock_out(product_id, data):
+    def stock_out(product_id, data, user_id):
 
-        product = ProductRepository.get_by_id(product_id)
+        # Find product belonging to this user
+        product = ProductRepository.get_by_id(
+            product_id,
+            user_id
+        )
 
         if not product:
             raise ValueError("Product not found")
@@ -65,6 +72,7 @@ class StockMovementService:
 
         movement = StockMovement(
             product_id=product.id,
+            user_id=user_id,
             movement_type="OUT",
             quantity=quantity,
             reason=data.get("reason")
@@ -72,18 +80,21 @@ class StockMovementService:
 
         ProductRepository.update()
 
-        return StockMovementRepository.create(
-            movement
-        )
+        return StockMovementRepository.create(movement)
 
     @staticmethod
-    def get_stock_history(product_id):
+    def get_stock_history(product_id, user_id):
 
-        product = ProductRepository.get_by_id(product_id)
+        # Verify product ownership
+        product = ProductRepository.get_by_id(
+            product_id,
+            user_id
+        )
 
         if not product:
             raise ValueError("Product not found")
 
         return StockMovementRepository.get_by_product(
-            product_id
+            product_id,
+            user_id
         )

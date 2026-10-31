@@ -12,7 +12,8 @@ class StockMovementRepository:
         return movement
 
     @staticmethod
-    def get_by_product(product_id):
+    def get_by_product(product_id, user_id):
         return StockMovement.query.filter_by(
-            product_id=product_id
+            product_id=product_id,
+            user_id=user_id
         ).all()
