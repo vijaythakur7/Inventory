@@ -84,10 +84,10 @@ class ProductService:
             "SKU"
         )
 
-        price = ProductService._validate_price(data.get("price"))
+        price = ProductService._validate_price(data.get("price"))        
 
         if price is None:
-            raise ValueError("Price is required")
+            raise ValueError("Price is required")        
 
         quantity = ProductService._validate_non_negative_integer(
             data.get("quantity", 0),
