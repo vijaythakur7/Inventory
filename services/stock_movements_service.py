@@ -72,7 +72,7 @@ class StockMovementService:
             StockMovementService._validate_request_data(data)
         )
 
-        product = ProductRepository.get_by_id(
+        product = ProductRepository.get_by_id_for_update(
             product_id,
             user_id
         )
@@ -111,7 +111,7 @@ class StockMovementService:
             StockMovementService._validate_request_data(data)
         )
 
-        product = ProductRepository.get_by_id(
+        product = ProductRepository.get_by_id_for_update(
             product_id,
             user_id
         )
@@ -156,7 +156,7 @@ class StockMovementService:
         ):
             raise ValueError("Product ID must be a positive integer")
 
-        product = ProductRepository.get_by_id(
+        product = ProductRepository.get_by_id_for_update(
             product_id,
             user_id
         )

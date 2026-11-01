@@ -23,6 +23,14 @@ class ProductRepository:
         ).first()
 
     @staticmethod
+    def get_by_id_for_update(product_id, user_id):
+    
+        return Product.query.filter_by(
+            id=product_id,
+            user_id=user_id
+        ).with_for_update().first()
+
+    @staticmethod
     def update():
         db.session.commit()
 
