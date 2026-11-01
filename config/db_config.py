@@ -1,10 +1,12 @@
+
 import os
 from urllib.parse import quote_plus
 from dotenv import load_dotenv
 
 load_dotenv()
-class Config:
 
+
+class Config:
 
     SECRET_KEY = os.getenv("SECRET_KEY")
 
@@ -25,8 +27,30 @@ class Config:
     )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
     SQLALCHEMY_ECHO = False
 
     USER_SERVICE_URL = os.getenv("USER_SERVICE_URL")
     USER_SERVICE_KEY = os.getenv("USER_SERVICE_KEY")
+
+    @classmethod
+    def validate(cls):
+
+        required_settings = {
+            "SECRET_KEY": cls.SECRET_KEY,
+            "DB_NAME": cls.DB_NAME,
+            "DB_USER": cls.DB_USER,
+            "USER_SERVICE_URL": cls.USER_SERVICE_URL,
+            "USER_SERVICE_KEY": cls.USER_SERVICE_KEY,
+        }
+
+        missing_settings = [
+            key
+            for key, value in required_settings.items()
+            if not value
+        ]
+
+        if missing_settings:
+            raise RuntimeError(
+                "Missing required environment variables: "
+                + ", ".join(missing_settings)
+            )

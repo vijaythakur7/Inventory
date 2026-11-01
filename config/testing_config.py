@@ -10,3 +10,7 @@ class TestingConfig:
     WTF_CSRF_ENABLED = False
 
     JWT_SECRET_KEY = "testing-secret-key"
+
+    @classmethod
+    def validate(cls):
+        pass
