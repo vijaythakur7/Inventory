@@ -11,10 +11,16 @@ from controllers.categories_controller import category_controller
 from controllers.products_controller import product_controller
 from controllers.stock_movements_controller import stock_controller
 
+from utils.logger import setup_logger
 
 def create_app(config_class=Config):
 
     app = Flask(__name__)
+
+    # Initialize application logger
+    logger = setup_logger()
+    app.logger.handlers = logger.handlers
+    app.logger.setLevel(logger.level)
 
     # Load application configuration
     app.config.from_object(config_class)
