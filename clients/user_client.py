@@ -1,11 +1,38 @@
 import requests
-from requests.exceptions import Timeout, ConnectionError
+from requests.adapters import HTTPAdapter
+from requests.exceptions import RequestException
+from urllib3.util.retry import Retry
+
 from config.db_config import Config
 
 
 class UserServiceUnavailable(Exception):
     pass
 
+
+def create_user_service_session():
+
+    session = requests.Session()
+
+    retry_strategy = Retry(
+        total=Config.USER_SERVICE_RETRIES,
+        connect=Config.USER_SERVICE_RETRIES,
+        read=Config.USER_SERVICE_RETRIES,
+        status=Config.USER_SERVICE_RETRIES,
+        backoff_factor=0.5,
+        status_forcelist=[500, 502, 503, 504],
+        allowed_methods=["GET"],
+        raise_on_status=False
+    )
+
+    adapter = HTTPAdapter(
+        max_retries=retry_strategy
+    )
+
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+
+    return session
 
 def get_current_user(token):
 
@@ -16,21 +43,21 @@ def get_current_user(token):
         "X-Service-Key": Config.USER_SERVICE_KEY
     }
 
+    session = create_user_service_session()
+
     try:
         response = requests.get(
             url,
             headers=headers,
-            timeout=5
+            timeout=Config.USER_SERVICE_TIMEOUT
         )
 
         return response
 
-    except Timeout as exc:
+    except RequestException as exc:
         raise UserServiceUnavailable(
             "User service request timed out"
         ) from exc
 
-    except ConnectionError as exc:
-        raise UserServiceUnavailable(
-            "User service is unavailable"
-        ) from exc
+    finally:
+        session.close()

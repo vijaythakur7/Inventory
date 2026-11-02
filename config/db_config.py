@@ -32,6 +32,11 @@ class Config:
     USER_SERVICE_URL = os.getenv("USER_SERVICE_URL")
     USER_SERVICE_KEY = os.getenv("USER_SERVICE_KEY")
 
+    # Service communication configuration
+    USER_SERVICE_TIMEOUT = int(os.getenv("USER_SERVICE_TIMEOUT", "5"))
+
+    USER_SERVICE_RETRIES = int(os.getenv("USER_SERVICE_RETRIES", "3"))
+
     @classmethod
     def validate(cls):
 
@@ -41,6 +46,8 @@ class Config:
             "DB_USER": cls.DB_USER,
             "USER_SERVICE_URL": cls.USER_SERVICE_URL,
             "USER_SERVICE_KEY": cls.USER_SERVICE_KEY,
+            "USER_SERVICE_TIMEOUT":cls.USER_SERVICE_TIMEOUT,
+            "USER_SERVICE_RETRIES":cls.USER_SERVICE_RETRIES
         }
 
         missing_settings = [
